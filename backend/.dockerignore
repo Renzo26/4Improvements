@@ -1,0 +1,13 @@
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+.env
+*.env
+!.env.example
+.git
+.gitignore
+.pytest_cache
+scripts/__pycache__
+*.md
+db_conection*

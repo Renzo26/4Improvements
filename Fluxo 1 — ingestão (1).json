@@ -1,0 +1,428 @@
+{
+  "name": "Fluxo 1 — ingestão",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        432,
+        736
+      ],
+      "id": "645edd7e-03b1-43eb-b339-4390b4ca2926",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "861d4e09-c4d0-4f5c-afcb-257a55c5051a",
+      "name": "Recebe Dados",
+      "webhookId": "fea5b8dc-5242-4cd5-9935-d2ede60bfc53"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM contacts \nWHERE email = '{{ $json.body.email }}' \nOR phone = '{{ $json.body.phone }}' \nLIMIT 1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        704,
+        -32
+      ],
+      "id": "da52d76d-e49a-44ec-8721-7a536dc29ae8",
+      "name": "Verifica se o contato já existe",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "qorhxJkxH1KtMIcq",
+          "name": "Renzo04"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "96f14088-20fd-4b64-8f10-7cf3fa54f30a",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        -32
+      ],
+      "id": "ec4aedfe-66be-4a11-839f-cba82f9f2ff6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO contacts (name, email, phone, created_at)\nVALUES (\n  '{{ $('Recebe Dados').item.json.body.name }}',\n  NULLIF('{{ $('Recebe Dados').item.json.body.email }}', ''),\n  NULLIF('{{ $('Recebe Dados').item.json.body.phone }}', ''),\n  NOW()\n)\nRETURNING *\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1136,
+        96
+      ],
+      "id": "27c62acc-0440-4c43-a9ae-4c86388d90f0",
+      "name": "Cria contato",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "qorhxJkxH1KtMIcq",
+          "name": "Renzo04"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO leads (\n  contact_id, source, campaign, utm_source, utm_medium,\n  utm_campaign, message, status, responsible_area, created_at\n)\nVALUES (\n  '{{ $json.id }}',\n  '{{ $('Recebe Dados').item.json.body.source }}',\n  NULLIF('{{ $('Recebe Dados').item.json.body.campaign }}', ''),\n  NULLIF('{{ $('Recebe Dados').item.json.body.utm_source }}', ''),\n  NULLIF('{{ $('Recebe Dados').item.json.body.utm_medium }}', ''),\n  NULLIF('{{ $('Recebe Dados').item.json.body.utm_campaign }}', ''),\n  NULLIF('{{ $('Recebe Dados').item.json.body.message }}', ''),\n  'nova',\n  'inside_sales',\n  NOW()\n)\nRETURNING *\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1360,
+        -48
+      ],
+      "id": "c9dd4ae2-ea8e-40bc-b714-2808856e9270",
+      "name": "Cria Lead",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "qorhxJkxH1KtMIcq",
+          "name": "Renzo04"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO lead_history (lead_id, action_type, new_status, new_area, created_at)\nVALUES (\n  '{{ $json.id }}',\n  'lead_criada',\n  'nova',\n  'inside_sales',\n  NOW()\n)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1648,
+        -48
+      ],
+      "id": "8a7b48c5-6caf-42f8-a362-ade6731f6834",
+      "name": "Cria histórico",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "qorhxJkxH1KtMIcq",
+          "name": "Renzo04"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"message\": \"Lead criada com sucesso\",\n  \"lead_id\": \"{{ $('Cria Lead').item.json.id }}\",\n  \"contact_id\": \"{{ $('Cria Lead').item.json.contact_id }}\",\n  \"status\": \"nova\",\n  \"responsible_area\": \"inside_sales\"\n}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1856,
+        -48
+      ],
+      "id": "351113eb-686f-43eb-a3c3-561f3b2064e6",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "65c4b2b1-5528-436e-b940-bcbcac2c5ec0",
+              "leftValue": "={{ $json.body.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "ab4efab8-3d89-44c3-b176-3bb4541e6574",
+              "leftValue": "={{ $json.body.source }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "fd0db465-ef4b-47d2-a727-4533366055a0",
+      "name": "Checa campos obrigatórios Nome/source"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "932ea415-d940-42dd-b614-7cb1ed165348",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2903b631-c434-4d0b-8f60-bc6117a263d3",
+              "leftValue": "={{ $json.body.phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        432,
+        -16
+      ],
+      "id": "162d8ebe-1e76-4ef0-9f94-9bef83648403",
+      "name": "Checa email ou telefone"
+    }
+  ],
+  "pinData": {
+    "Recebe Dados": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.cloudysolutions.fun",
+            "user-agent": "PostmanRuntime/7.54.0",
+            "content-length": "207",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "cache-control": "no-cache",
+            "content-type": "application/json",
+            "postman-token": "4635803d-7cdd-4374-b4dd-79b970873457",
+            "x-forwarded-for": "2804:7f0:9783:efb7:7dd5:8e71:f095:9f78, 54.86.50.139",
+            "x-forwarded-host": "n8n.cloudysolutions.fun",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "412385e0d9cc",
+            "x-real-ip": "54.86.50.139"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "name": "Arthur Renzo",
+            "email": "arthur.renzo04@gmail.com",
+            "phone": "+5511987278746",
+            "source": "meta_ads",
+            "campaign": "compradores_lisboa",
+            "message": "Pretendo comprar apartamento em Lisboa."
+          },
+          "webhookUrl": "https://n8n.cloudysolutions.fun/webhook-test/lead-intake",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Recebe Dados": {
+      "main": [
+        [
+          {
+            "node": "Checa campos obrigatórios Nome/source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica se o contato já existe": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Cria Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cria contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria contato": {
+      "main": [
+        [
+          {
+            "node": "Cria Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria Lead": {
+      "main": [
+        [
+          {
+            "node": "Cria histórico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria histórico": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checa campos obrigatórios Nome/source": {
+      "main": [
+        [
+          {
+            "node": "Checa email ou telefone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checa email ou telefone": {
+      "main": [
+        [
+          {
+            "node": "Verifica se o contato já existe",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b0c31c18-839d-4111-ba79-0547d4396fc9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f7528a2d6c31c201d115ad7d98368c078b9873a0e9d0c8bc9290d83b79f9c2b2"
+  },
+  "id": "eBs1MwfdW-mGFvAWsY6Jg",
+  "tags": []
+}

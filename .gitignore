@@ -1,0 +1,27 @@
+# Ambiente / segredos
+.env
+*.env
+!.env.example
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Arquivo de credenciais avulso (não versionar)
+db_conection
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Documento confidencial do teste (não publicar)
+*.pdf
