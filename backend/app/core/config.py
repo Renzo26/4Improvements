@@ -11,9 +11,6 @@ class Settings(BaseSettings):
     # Banco de dados — Supabase (Session Pooler, porta 5432, IPv4)
     database_url: str
 
-    # IA — classificação de interesse da lead (usada via n8n/serviço)
-    anthropic_api_key: str = ""
-
     # App
     app_env: str = "development"
     app_port: int = 8080

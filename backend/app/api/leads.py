@@ -43,6 +43,14 @@ async def create_lead(
     "/leads/{lead_id}/first-contact",
     response_model=LeadRead,
     summary="Registar o primeiro contacto e calcular o SLA (30 min)",
+    description=(
+        "Regista o 1.º contacto da equipa com a lead. Muda o estado para `contactada`, "
+        "calcula `dentro_sla`/`fora_sla` (relógio do banco), cria a interação e grava o histórico."
+    ),
+    responses={
+        404: {"description": "Lead não encontrada."},
+        409: {"description": "Lead já teve o primeiro contacto registado."},
+    },
 )
 async def register_first_contact(
     lead_id: uuid.UUID,
@@ -57,6 +65,16 @@ async def register_first_contact(
     "/leads/{lead_id}/qualification",
     response_model=LeadRead,
     summary="Qualificar a lead pelo interesse e encaminhar para a área",
+    description=(
+        "Qualifica a lead com o interesse e, na mesma transação, encaminha-a para a área "
+        "correspondente (`comprar_imovel→buyer_advisory`, `vender_imovel→sell_advisor_mediacao`, "
+        "`credito_habitacao→credito_habitacao`, `investimento_spv→spv_investimentos`). "
+        "Muda o estado `→ qualificada → encaminhada` e grava dois registos no histórico."
+    ),
+    responses={
+        404: {"description": "Lead não encontrada."},
+        409: {"description": "Lead já foi encaminhada."},
+    },
 )
 async def qualify_lead(
     lead_id: uuid.UUID,
@@ -86,6 +104,11 @@ async def check_sla(
     "/leads",
     response_model=list[LeadRead],
     summary="Listar leads com filtros opcionais",
+    description=(
+        "Lista leads (mais recentes primeiro) com filtros opcionais por `status`, "
+        "`responsible_area` e `sla_status`, mais paginação (`limit`/`offset`). "
+        "Ex.: `?responsible_area=buyer_advisory` mostra as leads encaminhadas para Buyer Advisory."
+    ),
 )
 async def list_leads(
     status: Optional[LeadStatus] = None,
@@ -110,6 +133,7 @@ async def list_leads(
     "/leads/{lead_id}",
     response_model=LeadRead,
     summary="Obter uma lead pelo id",
+    responses={404: {"description": "Lead não encontrada."}},
 )
 async def get_lead(
     lead_id: uuid.UUID,
@@ -123,6 +147,7 @@ async def get_lead(
     "/leads/{lead_id}/history",
     response_model=list[LeadHistoryRead],
     summary="Obter o histórico (auditoria) de uma lead",
+    responses={404: {"description": "Lead não encontrada."}},
 )
 async def get_lead_history(
     lead_id: uuid.UUID,

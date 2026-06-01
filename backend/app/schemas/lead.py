@@ -22,15 +22,28 @@ class LeadCreate(BaseModel):
     contacto (`email` OU `phone`).
     """
 
-    name: str = Field(min_length=1, max_length=200)
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(default=None, max_length=30)
-    source: LeadSource
-    campaign: Optional[str] = Field(default=None, max_length=200)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Mariana Silva",
+                "email": "mariana@email.com",
+                "phone": "+351912345678",
+                "source": "meta_ads",
+                "campaign": "compradores_lisboa",
+                "message": "Pretendo comprar apartamento em Lisboa.",
+            }
+        }
+    )
+
+    name: str = Field(min_length=1, max_length=200, description="Nome do potencial cliente.")
+    email: Optional[EmailStr] = Field(default=None, description="E-mail. Obrigatório se não houver telefone.")
+    phone: Optional[str] = Field(default=None, max_length=30, description="Telefone. Obrigatório se não houver e-mail.")
+    source: LeadSource = Field(description="Origem da oportunidade.")
+    campaign: Optional[str] = Field(default=None, max_length=200, description="Campanha de marketing (opcional).")
     utm_source: Optional[str] = Field(default=None, max_length=200)
     utm_medium: Optional[str] = Field(default=None, max_length=200)
     utm_campaign: Optional[str] = Field(default=None, max_length=200)
-    message: Optional[str] = None
+    message: Optional[str] = Field(default=None, description="Mensagem inicial livre do cliente.")
 
     @field_validator("phone", "campaign", "utm_source", "utm_medium", "utm_campaign", "message")
     @classmethod
@@ -89,8 +102,14 @@ class LeadCreatedResponse(BaseModel):
 class FirstContactCreate(BaseModel):
     """Regista o primeiro contacto com a lead (mede o SLA de 30 min)."""
 
-    type: InteractionType
-    note: Optional[str] = Field(default=None, max_length=2000)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"type": "chamada", "note": "Cliente respondeu e confirmou interesse em compra."}
+        }
+    )
+
+    type: InteractionType = Field(description="Canal do contacto: chamada, whatsapp ou email.")
+    note: Optional[str] = Field(default=None, max_length=2000, description="Observação opcional.")
 
     @field_validator("note")
     @classmethod
@@ -104,8 +123,14 @@ class FirstContactCreate(BaseModel):
 class QualificationCreate(BaseModel):
     """Qualifica a lead com o interesse identificado e dispara o roteamento."""
 
-    interest: LeadInterest
-    note: Optional[str] = Field(default=None, max_length=2000)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"interest": "comprar_imovel", "note": "Interesse confirmado em compra de imóvel."}
+        }
+    )
+
+    interest: LeadInterest = Field(description="Interesse identificado — determina a área de encaminhamento.")
+    note: Optional[str] = Field(default=None, max_length=2000, description="Observação opcional.")
 
     @field_validator("note")
     @classmethod

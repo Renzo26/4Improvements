@@ -14,9 +14,35 @@ from app.core.exceptions import ConflictError, NotFoundError
 
 settings = get_settings()
 
+API_DESCRIPTION = """
+API de **gestão inicial de leads** para uma imobiliária — MVP do teste técnico 4Improvements.
+
+Gere o ciclo de vida de uma lead: **criação → primeiro contacto (SLA) → qualificação → encaminhamento**,
+mantendo o histórico de cada ação.
+
+### Regras de negócio principais
+- Toda lead nasce com estado `nova` e área `inside_sales`.
+- Deduplicação de contacto por **e-mail ou telefone** (o mesmo contacto pode ter várias leads).
+- **SLA:** o primeiro contacto deve ocorrer em até 30 min após a criação (calculado pelo relógio do banco).
+- O **interesse** identificado determina a **área** de encaminhamento.
+- Ações críticas (criação, contacto, qualificação, encaminhamento) geram **histórico**.
+
+> A qualificação e o encaminhamento são feitos no **mesmo endpoint** (`/leads/{id}/qualification`):
+> identificar o interesse determina deterministicamente a área, então é uma única transação atómica.
+"""
+
+tags_metadata = [
+    {"name": "leads", "description": "Criação, consulta, primeiro contacto, qualificação e histórico de leads."},
+    {"name": "health", "description": "Verificações de saúde da aplicação e da base de dados."},
+]
+
 app = FastAPI(
     title="4Improvements — Lead Management API",
-    version="0.1.0",
+    version="1.0.0",
+    description=API_DESCRIPTION,
+    openapi_tags=tags_metadata,
+    contact={"name": "Candidato — Teste 4Improvements"},
+    license_info={"name": "Uso restrito — avaliação técnica"},
 )
 
 
@@ -48,12 +74,12 @@ app.add_middleware(
 app.include_router(leads.router)
 
 
-@app.get("/health")
+@app.get("/health", tags=["health"], summary="Saúde da aplicação")
 async def health():
     return {"status": "ok"}
 
 
-@app.get("/health/db")
+@app.get("/health/db", tags=["health"], summary="Saúde da conexão ao banco")
 async def health_db():
     """Valida a conectividade com o Supabase (Session Pooler)."""
     async with engine.connect() as conn:

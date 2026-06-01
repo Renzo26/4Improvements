@@ -1,0 +1,223 @@
+{
+  "name": "Fluxo 2 - Agente de IA Classificador",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-qualify",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        -16
+      ],
+      "id": "c63c1aa6-354e-4824-8c43-aa2adb6692fa",
+      "name": "Webhook",
+      "webhookId": "6b7fb6e2-bffb-42e2-af3b-e8d38b9af192"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"lead_id\": \"{{ $('Webhook').item.json.body.lead_id }}\",\n  \"interest\": \"{{ $json.interest }}\",\n  \"responsible_area\": \"{{ $json.responsible_area }}\",\n  \"status\": \"{{ $json.status }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        -16
+      ],
+      "id": "aa88df78-da13-423c-9238-84cfb2246151",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.lead_id }}, {{ $json.body.message }}",
+        "options": {
+          "systemMessage": "=És um classificador de leads de uma imobiliária. Lê a mensagem do cliente e identifica o interesse principal.\n\nResponde APENAS com um JSON, sem explicações, neste formato exato:\n{\"interest\": \"<código>\"}\n\nOnde <código> é EXATAMENTE um destes quatro valores:\n- comprar_imovel        (quer comprar/adquirir um imóvel)\n- vender_imovel         (quer vender/colocar à venda um imóvel)\n- credito_habitacao     (quer financiamento/crédito/empréstimo para habitação)\n- investimento_spv      (quer investir, rentabilizar capital, fundos, SPV)\n\nMensagem do cliente:\n{{ $json.body.message }}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        -16
+      ],
+      "id": "93a67271-03f0-47ac-aff3-2fc54ceea26a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        192
+      ],
+      "id": "f542826c-1a60-41f5-896a-6b0568bbed17",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "poz94rpT6wwhSVKo",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.lead_id }}, {{ $json.body.message }}",
+        "sessionTTL": 86400,
+        "contextWindowLength": 30
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        -32,
+        208
+      ],
+      "id": "5e29af17-1ec4-4c5f-bdd8-3b6ded099aeb",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "RudSVcTQQTzaeKf2",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://portfloio-4-improvements.e4xqua.easypanel.host/leads/{{ $('Webhook').item.json.body.lead_id }}/qualification",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        336,
+        -16
+      ],
+      "id": "4a2516f3-d3b4-49f0-943d-77c3ac1027f5",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.cloudysolutions.fun",
+            "user-agent": "PostmanRuntime/7.54.0",
+            "content-length": "119",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "cache-control": "no-cache",
+            "content-type": "application/json",
+            "postman-token": "c74f4ec7-e8c1-4dbe-9bd5-f4ab0ba8302c",
+            "x-forwarded-for": "2804:7f0:9783:efb7:7dd5:8e71:f095:9f78, 54.86.50.139",
+            "x-forwarded-host": "n8n.cloudysolutions.fun",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "412385e0d9cc",
+            "x-real-ip": "54.86.50.139"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "lead_id": "2542e735-d429-4ec7-8232-a52c1f332b7a",
+            "message": "Pretendo comprar um apartamento em Lisboa."
+          },
+          "webhookUrl": "https://n8n.cloudysolutions.fun/webhook-test/lead-qualify",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "089d63da-6187-4e79-b2d9-fa21e009db53",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f7528a2d6c31c201d115ad7d98368c078b9873a0e9d0c8bc9290d83b79f9c2b2"
+  },
+  "id": "uQeTJ5sY1s1y231Gm4TSp",
+  "tags": []
+}
