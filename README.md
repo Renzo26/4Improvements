@@ -1,8 +1,9 @@
-# 4Improvements — API de Gestão de Leads (MVP)
+# 4Improvements — Gestão de Leads (MVP)
 
-API backend para gerir o ciclo inicial de uma lead de uma imobiliária — **da entrada ao encaminhamento** — com persistência, validação, SLA e histórico de ações. Desenvolvido como teste técnico (**Desenvolvedor Backend / Integrações**).
+Sistema completo de gestão do ciclo inicial de leads de uma imobiliária — **da entrada ao encaminhamento** — com persistência, validação, SLA, histórico de ações, orquestração por IA (n8n) e interface visual. Desenvolvido como teste técnico (**Especialista em N8N e Infraestruturas de Inteligência Artificial**).
 
-- 🌐 **API online:** https://portfloio-4-improvements.e4xqua.easypanel.host
+- 🖥️ **Frontend:** https://portfloio-4-improvements-front.e4xqua.easypanel.host
+- 🌐 **API:** https://portfloio-4-improvements.e4xqua.easypanel.host
 - 📖 **Swagger:** https://portfloio-4-improvements.e4xqua.easypanel.host/docs
 - ❤️ **Health:** [`/health`](https://portfloio-4-improvements.e4xqua.easypanel.host/health) · [`/health/db`](https://portfloio-4-improvements.e4xqua.easypanel.host/health/db)
 
@@ -230,11 +231,16 @@ A suíte cobre os comportamentos mínimos exigidos: criação válida, rejeiçã
 
 ## Deploy
 
-Imagem Docker construída a partir de [`backend/Dockerfile`](backend/Dockerfile) (python:3.11-slim); orquestração em [`docker-compose.yml`](docker-compose.yml) (padrão EasyPanel, rede externa `easypanel`). O container roda `alembic upgrade head` no arranque e sobe o `uvicorn` na porta `8080`.
+Ambos os serviços correm em **EasyPanel** via Docker Compose, na mesma rede externa `easypanel`.
 
-Variáveis no painel: `DATABASE_URL`, `SLA_MINUTES`, `CORS_ORIGINS`. Já publicado em https://portfloio-4-improvements.e4xqua.easypanel.host.
+| Serviço | Repositório | Dockerfile | URL |
+|---|---|---|---|
+| **Backend** | `4Improvements` | `backend/Dockerfile` (python:3.11-slim) | https://portfloio-4-improvements.e4xqua.easypanel.host |
+| **Frontend** | `relay-leads` | `Dockerfile` (node:20-alpine, multi-stage) | https://portfloio-4-improvements-front.e4xqua.easypanel.host |
 
-> Deploy não era obrigatório (está fora do escopo do enunciado) — incluído para a demonstração end-to-end.
+O backend executa `alembic upgrade head` no arranque antes de subir o `uvicorn` (porta 8080). O frontend é uma app SSR (TanStack Start + Nitro `node_server`) que corre na porta 3000; o `VITE_API_BASE_URL` é baked no bundle em tempo de build.
+
+> Deploy não era obrigatório (fora do escopo do enunciado) — incluído para demonstração end-to-end.
 
 ---
 
