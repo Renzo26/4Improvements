@@ -9,6 +9,7 @@ from typing import Optional
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.exceptions import ConflictError, NotFoundError
@@ -256,8 +257,14 @@ async def check_sla_breaches(db: AsyncSession) -> list[Lead]:
 
 
 async def get_lead(db: AsyncSession, lead_id: uuid.UUID) -> Lead:
-    """Devolve uma lead pelo id (404 se não existir)."""
-    return await _get_lead_or_404(db, lead_id)
+    """Devolve uma lead pelo id com contacto carregado (404 se não existir)."""
+    result = await db.execute(
+        select(Lead).options(selectinload(Lead.contact)).where(Lead.id == lead_id)
+    )
+    lead = result.scalar_one_or_none()
+    if lead is None:
+        raise NotFoundError("Lead não encontrada.")
+    return lead
 
 
 async def list_leads(
@@ -269,7 +276,7 @@ async def list_leads(
     offset: int = 0,
 ) -> list[Lead]:
     """Lista leads com filtros opcionais, mais recentes primeiro."""
-    stmt = select(Lead)
+    stmt = select(Lead).options(selectinload(Lead.contact))
     if status is not None:
         stmt = stmt.where(Lead.status == status)
     if responsible_area is not None:

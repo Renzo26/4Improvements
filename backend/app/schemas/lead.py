@@ -155,6 +155,12 @@ class LeadHistoryRead(BaseModel):
     created_at: datetime
 
 
+class LeadWithContactRead(LeadRead):
+    """LeadRead com o contacto embedido — usado nas listagens e detalhes."""
+
+    contact: ContactRead
+
+
 class SlaCheckResponse(BaseModel):
     """Resultado da varredura de SLA (consumida pelo n8n no Fluxo 3)."""
 

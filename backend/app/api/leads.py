@@ -13,6 +13,7 @@ from app.schemas.lead import (
     LeadCreatedResponse,
     LeadHistoryRead,
     LeadRead,
+    LeadWithContactRead,
     QualificationCreate,
     SlaCheckResponse,
 )
@@ -41,7 +42,7 @@ async def create_lead(
 
 @router.post(
     "/leads/{lead_id}/first-contact",
-    response_model=LeadRead,
+    response_model=LeadWithContactRead,
     summary="Registar o primeiro contacto e calcular o SLA (30 min)",
     description=(
         "Regista o 1.º contacto da equipa com a lead. Muda o estado para `contactada`, "
@@ -56,14 +57,15 @@ async def register_first_contact(
     lead_id: uuid.UUID,
     payload: FirstContactCreate,
     db: AsyncSession = Depends(get_db),
-) -> LeadRead:
+) -> LeadWithContactRead:
     lead = await lead_service.register_first_contact(db, lead_id, payload)
-    return LeadRead.model_validate(lead)
+    await db.refresh(lead, attribute_names=["contact"])
+    return LeadWithContactRead.model_validate(lead)
 
 
 @router.post(
     "/leads/{lead_id}/qualification",
-    response_model=LeadRead,
+    response_model=LeadWithContactRead,
     summary="Qualificar a lead pelo interesse e encaminhar para a área",
     description=(
         "Qualifica a lead com o interesse e, na mesma transação, encaminha-a para a área "
@@ -80,9 +82,10 @@ async def qualify_lead(
     lead_id: uuid.UUID,
     payload: QualificationCreate,
     db: AsyncSession = Depends(get_db),
-) -> LeadRead:
+) -> LeadWithContactRead:
     lead = await lead_service.qualify_lead(db, lead_id, payload)
-    return LeadRead.model_validate(lead)
+    await db.refresh(lead, attribute_names=["contact"])
+    return LeadWithContactRead.model_validate(lead)
 
 
 @router.post(
@@ -102,7 +105,7 @@ async def check_sla(
 
 @router.get(
     "/leads",
-    response_model=list[LeadRead],
+    response_model=list[LeadWithContactRead],
     summary="Listar leads com filtros opcionais",
     description=(
         "Lista leads (mais recentes primeiro) com filtros opcionais por `status`, "
@@ -117,7 +120,7 @@ async def list_leads(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
-) -> list[LeadRead]:
+) -> list[LeadWithContactRead]:
     leads = await lead_service.list_leads(
         db,
         status=status,
@@ -126,21 +129,21 @@ async def list_leads(
         limit=limit,
         offset=offset,
     )
-    return [LeadRead.model_validate(lead) for lead in leads]
+    return [LeadWithContactRead.model_validate(lead) for lead in leads]
 
 
 @router.get(
     "/leads/{lead_id}",
-    response_model=LeadRead,
+    response_model=LeadWithContactRead,
     summary="Obter uma lead pelo id",
     responses={404: {"description": "Lead não encontrada."}},
 )
 async def get_lead(
     lead_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> LeadRead:
+) -> LeadWithContactRead:
     lead = await lead_service.get_lead(db, lead_id)
-    return LeadRead.model_validate(lead)
+    return LeadWithContactRead.model_validate(lead)
 
 
 @router.get(
