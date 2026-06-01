@@ -248,7 +248,6 @@ O backend executa `alembic upgrade head` no arranque antes de subir o `uvicorn` 
 
 Documentação detalhada dos workflows em **[N8N_fluxos/README.md](N8N_fluxos/README.md)**. Resumo:
 
-- **Fluxo 1 — Ingestão:** webhook → validação → dedup → cria lead + histórico.
 - **Fluxo 2 — Qualificação por IA:** webhook → **OpenAI `gpt-4.1-mini`** classifica o interesse a partir da mensagem → `POST /leads/{id}/qualification`.
 - **Fluxo 3 — SLA:** *Schedule* → `POST /leads/sla/check` → notificação por **WhatsApp (WAHA)**.
 
@@ -268,7 +267,7 @@ Documentação detalhada dos workflows em **[N8N_fluxos/README.md](N8N_fluxos/RE
 - **Pré-qualificação por IA (n8n):** a IA infere o interesse a partir da mensagem inicial como auxílio de produtividade; o **1.º contacto humano e o SLA continuam ações separadas** — o sistema não confunde "qualificada pela IA" com "contactada por uma pessoa".
 
 ### Evolução futura
-Trocar os nós Postgres do Fluxo 1 por `POST /contacts/leads`; encadear Fluxo 1 → Fluxo 2; autenticação nos webhooks e na API; *rate limiting*; testes de integração em CI (GitHub Actions).
+Encadear criação → Fluxo 2 IA automaticamente; autenticação nos webhooks e na API; *rate limiting*; testes de integração em CI (GitHub Actions).
 
 ---
 
