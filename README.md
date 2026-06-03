@@ -28,9 +28,9 @@ Sistema completo de gestão do ciclo inicial de leads de uma imobiliária — **
 O **backend FastAPI** é a *fonte da verdade* — implementa, sozinho, **todos os requisitos obrigatórios** do teste. Por cima dele, uma camada **n8n** (extra) adiciona orquestração, IA e notificações, sempre chamando o backend por HTTP (nunca duplicando regra de negócio).
 
 ```
-        ┌───────── n8n (extra: integrações/IA) ─────────┐
- Lead ▶ │ Fluxo 1: ingestão · Fluxo 2: IA · Fluxo 3: SLA│
-        └───────────────────────┬───────────────────────┘
+        ┌──────────── n8n (extra: integrações/IA) ───────────┐
+ Lead ▶ │   Fluxo 2: qualificação IA   ·   Fluxo 3: SLA      │
+        └────────────────────────┬───────────────────────────┘
                                  │ HTTP
                                  ▼
         ┌──────────────── Backend FastAPI ──────────────┐
@@ -40,6 +40,8 @@ O **backend FastAPI** é a *fonte da verdade* — implementa, sozinho, **todos o
                                  ▼
                        Supabase PostgreSQL
 ```
+
+> **Não existe "Fluxo 1".** A camada n8n tem apenas dois workflows ativos — **Fluxo 2** (qualificação por IA) e **Fluxo 3** (SLA) — conservando a numeração dos ficheiros em [`N8N_fluxos/`](N8N_fluxos/). A ingestão de leads é feita diretamente pelo backend (`POST /contacts/leads`), que já trata deduplicação, validação e criação — não há (nem é preciso) um fluxo n8n de entrada.
 
 ### Organização do código (Clean Architecture)
 
